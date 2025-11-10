@@ -1,32 +1,23 @@
-pipeline {
-    agent any
+stage('Deploy') {
+  steps {
+    sh '''
+    set -euo pipefail
+    echo "🔍 Checking port 8001..."
+    PID=$(lsof -t -i:8001 || true)
+    if [ -n "$PID" ]; then
+      echo "🛑 Stopping existing process on port 8001 (PID: $PID)"
+      kill -9 $PID || true
+      sleep 1
+    else
+      echo "✅ No existing process found on port 8001"
+    fi
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url: 'https://github.com/rajjaat2005/bike-showroom.git'
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                sh '''
-                PID=$(lsof -t -i:8001)
-                if [ ! -z "$PID" ]; then
-                    kill -9 $PID
-                fi
-                nohup python3 -m http.server 8001 --bind 0.0.0.0 &
-                '''
-            }
-        }
-    }
-
-    post {
-        success {
-            echo "Deployment completed successfully!"
-        }
-        failure {
-            echo "Deployment failed!"
-        }
-    }
+    echo "🚀 Starting Django server..."
+    nohup python3 manage.py runserver 0.0.0.0:8001 > server.log 2>&1 &
+    sleep 3
+    ss -ltnp | grep 8001 || echo "⚠️ Server might not have started"
+    echo "✅ Deploy stage completed successfully"
+    '''
+  }
 }
+
