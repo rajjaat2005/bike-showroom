@@ -6,7 +6,7 @@ pipeline {
             steps {
                 echo "🚀 Deploying bike-showroom project..."
                 sh '''
-                cd /root/bike-showroom
+                cd $WORKSPACE
                 echo "✅ Checking port 8001..."
                 PID=$(lsof -t -i:8001)
                 if [ ! -z "$PID" ]; then
@@ -21,4 +21,5 @@ pipeline {
         }
     }
 }
+
 
