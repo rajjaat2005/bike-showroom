@@ -1,23 +1,24 @@
-stage('Deploy') {
-  steps {
-    sh '''
-    set -euo pipefail
-    echo "🔍 Checking port 8001..."
-    PID=$(lsof -t -i:8001 || true)
-    if [ -n "$PID" ]; then
-      echo "🛑 Stopping existing process on port 8001 (PID: $PID)"
-      kill -9 $PID || true
-      sleep 1
-    else
-      echo "✅ No existing process found on port 8001"
-    fi
+pipeline {
+    agent any
 
-    echo "🚀 Starting Django server..."
-    nohup python3 manage.py runserver 0.0.0.0:8001 > server.log 2>&1 &
-    sleep 3
-    ss -ltnp | grep 8001 || echo "⚠️ Server might not have started"
-    echo "✅ Deploy stage completed successfully"
-    '''
-  }
+    stages {
+        stage('Deploy') {
+            steps {
+                echo "🚀 Deploying bike-showroom project..."
+                sh '''
+                cd /root/bike-showroom
+                echo "✅ Checking port 8001..."
+                PID=$(lsof -t -i:8001)
+                if [ ! -z "$PID" ]; then
+                    echo "⚠️ Port busy, killing old process..."
+                    kill -9 $PID
+                fi
+                echo "🚀 Starting server..."
+                nohup python3 -m http.server 8001 &
+                echo "✅ Deployment successful!"
+                '''
+            }
+        }
+    }
 }
 
